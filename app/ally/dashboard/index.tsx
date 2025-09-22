@@ -1,53 +1,72 @@
+import { useRouter } from 'expo-router';
 import React from 'react';
-import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Navbar from '../../../components/ui/navbar';
 
-const ALLIES = [
-  { id: '1', name: 'Priya Sharma', contact: '+91 9876543210' },
-  { id: '2', name: 'Amit Verma', contact: '+91 9123456780' },
-  { id: '3', name: 'Neha Singh', contact: '+91 9988776655' },
+const ALERTS = [
+  { id: '1', message: 'Victim triggered emergency alert', time: '2 min ago' },
+  { id: '2', message: 'Audio received from victim', time: '10 min ago' },
+  { id: '3', message: 'Victim marked safe', time: '1 day ago' },
+];
+
+const HELPLINES = [
+  { id: '1', name: 'Women Helpline', contact: '1091' },
+  { id: '2', name: 'National Commission for Women', contact: '7827-170-170' },
+  { id: '3', name: 'NGO: Sakshi', contact: '+91 9876543210' },
 ];
 
 export default function DashboardScreen() {
+  const router = useRouter();
   const handleLogout = () => {
-    Alert.alert('Logout', 'You have been logged out!');
-    // Add actual logout logic here
-  };
-  const handleStartRecording = () => {
-    Alert.alert('Recording', 'Manual recording started!');
-    // Add actual recording logic here
+    router.replace('/');
   };
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       {/* Navbar */}
-      <View style={styles.navbar}>
-        <Text style={styles.logo}>RAKHI</Text>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
-      {/* Welcome */}
-      <View style={styles.welcomeContainer}>
-        <Text style={styles.welcomeText}>Welcome, Ally!</Text>
-      </View>
-      {/* Start Recording Button */}
-      <TouchableOpacity style={styles.recordBtn} onPress={handleStartRecording}>
-        <Text style={styles.recordBtnText}>START</Text>
-      </TouchableOpacity>
-      {/* Allies List */}
-      <View style={styles.alliesSection}>
-        <Text style={styles.alliesHeading}>Allies</Text>
-        <FlatList
-          data={ALLIES}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.allyItem}>
-              <Text style={styles.allyName}>{item.name}</Text>
-              <Text style={styles.allyContact}>{item.contact}</Text>
+      <Navbar onLogout={handleLogout} />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Welcome */}
+        <View style={styles.welcomeContainer}>
+          <Text style={styles.welcomeText}>Welcome, Ally!</Text>
+        </View>
+        {/* Alerts Section */}
+        <View style={styles.alertsSection}>
+          <Text style={styles.sectionTitle}>Recent Alerts from Victim</Text>
+          {ALERTS.map(item => (
+            <View key={item.id} style={styles.alertItem}>
+              <Text style={styles.alertMsg}>{item.message}</Text>
+              <Text style={styles.alertTime}>{item.time}</Text>
             </View>
-          )}
-        />
-      </View>
+          ))}
+        </View>
+        {/* Graph Section */}
+        <View style={styles.graphSection}>
+          <Text style={styles.sectionTitle}>Victim Alerts Raised</Text>
+          {/* Simple Bar Chart */}
+          <View style={styles.barChartContainerWithMargin}>
+            {[5, 2, 4].map((count, idx) => (
+              <View key={idx} style={styles.barItem}>
+                <View style={[styles.bar, { height: count * 16 }]} />
+                <Text style={styles.barLabel}>Day {idx + 1}</Text>
+                <Text style={styles.barCount}>{count}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+        {/* Helpline Section */}
+        <View style={styles.helplineSection}>
+          <Text style={styles.sectionTitle}>Helpline Contacts</Text>
+          <ScrollView style={{ maxHeight: 120 }}>
+            {HELPLINES.map(h => (
+              <View key={h.id} style={styles.helplineItem}>
+                <Text style={styles.helplineName}>{h.name}</Text>
+                <Text style={styles.helplineContact}>{h.contact}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -97,56 +116,123 @@ const styles = StyleSheet.create({
     color: '#e75480',
     fontWeight: '600',
   },
-  recordBtn: {
-    alignSelf: 'center',
-    backgroundColor: '#e75480',
-    borderRadius: 40,
-    paddingVertical: 24,
-    paddingHorizontal: 48,
-    marginBottom: 32,
-    shadowColor: '#e75480',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-  },
-  recordBtnText: {
-    color: '#fff',
-    fontSize: 28,
-    fontWeight: 'bold',
-    letterSpacing: 2,
-  },
-  alliesSection: {
-    flex: 1,
-    backgroundColor: '#fff0f5',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    padding: 20,
-    marginTop: 16,
-  },
-  alliesHeading: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#e75480',
-    marginBottom: 12,
-  },
-  allyItem: {
+  alertsSection: {
     backgroundColor: '#fff',
     borderRadius: 16,
+    marginHorizontal: 24,
+    marginBottom: 24,
     padding: 16,
-    marginBottom: 12,
     shadowColor: '#e75480',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
   },
-  allyName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#e75480',
+  alertItem: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#ffe4ec',
+    paddingVertical: 8,
   },
-  allyContact: {
-    fontSize: 14,
+  alertMsg: {
+    fontSize: 15,
+    color: '#e75480',
+    fontWeight: '600',
+  },
+  alertTime: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
+  },
+  graphSection: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#e75480',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    minWidth: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 24,
+    marginBottom: 24,
+    marginTop: 0,
+  },
+  barChartContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    width: '100%',
+    height: 100,
+    marginTop: 8,
+    gap: 16,
+  },
+  barChartContainerWithMargin: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    width: '100%',
+    height: 100,
+    marginTop: 24,
+    gap: 16,
+  },
+  barItem: {
+    alignItems: 'center',
+    width: 36,
+  },
+  bar: {
+    width: 24,
+    backgroundColor: '#e75480',
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  barLabel: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
+  },
+  barCount: {
+    fontSize: 13,
+    color: '#e75480',
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  helplineSection: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginLeft: 8,
+    shadowColor: '#e75480',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    minWidth: 120,
+    marginHorizontal: 24,
+    marginBottom: 24,
+    marginTop: 0,
+  },
+  helplineItem: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#ffe4ec',
+    paddingVertical: 8,
+  },
+  helplineName: {
+    fontSize: 15,
+    color: '#e75480',
+    fontWeight: '600',
+  },
+  helplineContact: {
+    fontSize: 13,
     color: '#333',
     marginTop: 2,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#e75480',
+    marginBottom: 8,
+  },
+  scrollContent: {
+    paddingBottom: 32,
   },
 });

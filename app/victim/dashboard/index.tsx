@@ -1,6 +1,8 @@
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Navbar from '../../../components/ui/navbar';
 
 const VICTIM = {
   firstName: 'Riya',
@@ -14,9 +16,9 @@ const ALLIES = [
 ];
 
 export default function DashboardScreen() {
+  const router = useRouter();
   const handleLogout = () => {
-    Alert.alert('Logout', 'You have been logged out!');
-    // Add actual logout logic here
+    router.replace('/');
   };
   const handleStartRecording = () => {
     Alert.alert('Recording', 'Manual recording started!');
@@ -25,12 +27,7 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       {/* Navbar */}
-      <View style={styles.navbar}>
-        <Text style={styles.logo}>RAKHI</Text>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
+      <Navbar onLogout={handleLogout} />
       {/* Welcome */}
       <View style={styles.welcomeContainer}>
         <Text style={styles.welcomeText}>Welcome, {VICTIM.firstName}!</Text>

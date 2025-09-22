@@ -1,7 +1,9 @@
 import { Entypo, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Navbar from '../../components/ui/navbar';
 
 const RECORDINGS = [
   {
@@ -25,6 +27,7 @@ const RECORDINGS = [
 ];
 
 export default function RecordingsScreen() {
+  const router = useRouter();
   const handlePlay = (id: string) => {
     // Play logic here
     alert('Play recording ' + id);
@@ -36,12 +39,7 @@ export default function RecordingsScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       {/* Navbar */}
-      <View style={styles.navbar}>
-        <Text style={styles.logo}>RAKHI</Text>
-        <TouchableOpacity style={styles.logoutBtn} onPress={() => alert('Logout!')}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
+      <Navbar onLogout={() => router.replace('/')} />
       <View style={styles.listSection}>
         <FlatList
           data={RECORDINGS}

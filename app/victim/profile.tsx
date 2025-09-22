@@ -1,7 +1,9 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Navbar from '../../components/ui/navbar';
 
 const USER = {
   firstName: 'Riya',
@@ -17,15 +19,11 @@ function getInitial(name: string) {
 }
 
 export default function ProfileScreen() {
+  const router = useRouter();
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       {/* Navbar */}
-      <View style={styles.navbar}>
-        <Text style={styles.logo}>RAKHI</Text>
-        <TouchableOpacity style={styles.logoutBtn} onPress={() => alert('Logout!')}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
+      <Navbar onLogout={() => router.replace('/')} />
       {/* Profile Info */}
       <View style={styles.profileSection}>
         {USER.profilePic ? (

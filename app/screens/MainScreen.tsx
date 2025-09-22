@@ -11,10 +11,10 @@ export default function MainScreen() {
         <Text style={styles.logoText}>RAKHI</Text>
       </View>
       <View style={styles.optionsContainer}>
-  <TouchableOpacity style={styles.button} onPress={() => router.push('/victim/dashboard')}>
+  <TouchableOpacity style={styles.button} onPress={() => router.replace('/victim/dashboard')}>
           <Text style={styles.buttonText}>Continue as Victim</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={() => alert('Ally flow coming soon!')}>
+        <TouchableOpacity style={styles.button} onPress={() => router.replace('/ally/dashboard')}>
           <Text style={styles.buttonText}>Continue as Ally</Text>
         </TouchableOpacity>
       </View>
