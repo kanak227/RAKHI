@@ -2,6 +2,11 @@ import React from 'react';
 import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+const VICTIM = {
+  firstName: 'Riya',
+  lastName: 'Sharma',
+};
+
 const ALLIES = [
   { id: '1', name: 'Priya Sharma', contact: '+91 9876543210' },
   { id: '2', name: 'Amit Verma', contact: '+91 9123456780' },
@@ -28,7 +33,7 @@ export default function DashboardScreen() {
       </View>
       {/* Welcome */}
       <View style={styles.welcomeContainer}>
-        <Text style={styles.welcomeText}>Welcome, Ally!</Text>
+        <Text style={styles.welcomeText}>Welcome, {VICTIM.firstName}!</Text>
       </View>
       {/* Start Recording Button */}
       <TouchableOpacity style={styles.recordBtn} onPress={handleStartRecording}>

@@ -51,7 +51,6 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
         <View style={styles.alliesList}>
-          {/* Example allies with contact */}
           <View style={styles.allyRow}>
             <Text style={styles.allyName}>Priya Sharma</Text>
             <Text style={styles.allyContact}>+91 9876543210</Text>
