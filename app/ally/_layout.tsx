@@ -1,6 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Ionicons } from '@expo/vector-icons';
 
 export default function AllyTabLayout() {
   return (
@@ -12,7 +12,7 @@ export default function AllyTabLayout() {
       }}
     >
       <Tabs.Screen
-        name="dashboard"
+        name="dashboard/index"
         options={{
           title: 'Dashboard',
           tabBarIcon: ({ color, size }) => (

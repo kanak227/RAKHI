@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
+import React from 'react';
+import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function MainScreen() {
   const router = useRouter();
