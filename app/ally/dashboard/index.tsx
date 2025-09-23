@@ -61,6 +61,24 @@ export default function DashboardScreen() {
         AsyncStorage.setItem('ally_alerts', JSON.stringify(next)).catch(() => {});
         return next;
       });
+
+      // Also persist to shared recordings so Ally recordings screen can play it
+      if (data?.audioUri) {
+        AsyncStorage.getItem('shared_recordings').then(stored => {
+          try {
+            const parsed = stored ? JSON.parse(stored) : [];
+            const entry = {
+              id: Date.now().toString(),
+              title: 'Emergency Recording',
+              description: 'Received from victim',
+              uri: data.audioUri,
+              createdAt: new Date().toISOString(),
+            };
+            const recsNext = [entry, ...Array.isArray(parsed) ? parsed : []];
+            AsyncStorage.setItem('shared_recordings', JSON.stringify(recsNext)).catch(() => {});
+          } catch {}
+        });
+      }
     });
     return () => {
       socket.off('emergency-alert');
@@ -87,7 +105,9 @@ export default function DashboardScreen() {
               <Text style={styles.alertMsg}>{item.message}</Text>
               <Text style={styles.alertTime}>{item.time}</Text>
               {item.audioUri && (
-                <Text style={{ color: '#e75480', fontSize: 12 }}>Audio: {item.audioUri}</Text>
+                <Text style={{ color: '#e75480', fontSize: 12, textDecorationLine: 'underline' }}
+                  onPress={() => router.push('/ally/recordings')}
+                >View recording</Text>
               )}
             </View>
           ))}

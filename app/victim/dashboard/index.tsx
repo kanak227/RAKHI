@@ -1,8 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Animated, Easing, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Navbar from '../../../components/ui/navbar';
 import { getSocket } from '../../utils/socket';
@@ -22,6 +23,7 @@ function DashboardScreen() {
   const [codeword, setCodeword] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showSent, setShowSent] = useState(false);
 
   // Load codeword from storage on mount
   useEffect(() => {
@@ -36,6 +38,21 @@ function DashboardScreen() {
     s.emit('join-ally', '1');
     return s;
   }, []);
+
+  // Simple animated waveform while recording
+  const waveAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (isRecording) {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(waveAnim, { toValue: 1, duration: 600, easing: Easing.inOut(Easing.quad), useNativeDriver: false }),
+          Animated.timing(waveAnim, { toValue: 0, duration: 600, easing: Easing.inOut(Easing.quad), useNativeDriver: false }),
+        ])
+      );
+      loop.start();
+      return () => loop.stop();
+    }
+  }, [isRecording]);
 
   // Manual trigger: start recording
   const startManualRecording = async () => {
@@ -94,7 +111,35 @@ function DashboardScreen() {
         ];
         await AsyncStorage.setItem('ally_alerts', JSON.stringify(next));
       } catch {}
-      Alert.alert('Alert Sent', 'Emergency alert sent to ally! Recording URI: ' + uri);
+
+      // Persist recording entry for both Victim and Ally recordings lists
+      try {
+        if (uri) {
+          // Copy to app documents to keep it around
+          const recordingsDir = FileSystem.documentDirectory + 'recordings';
+          await FileSystem.makeDirectoryAsync(recordingsDir, { intermediates: true }).catch(() => {});
+          const filename = `rec-${Date.now()}.m4a`;
+          const dest = `${recordingsDir}/${filename}`;
+          await FileSystem.copyAsync({ from: uri, to: dest }).catch(() => {});
+
+          const entry = {
+            id: Date.now().toString(),
+            title: 'Emergency Recording',
+            description: 'Auto-saved from victim',
+            uri: dest,
+            createdAt: new Date().toISOString(),
+          };
+
+          const key = 'shared_recordings';
+          const existingRecs = await AsyncStorage.getItem(key);
+          const parsedRecs = existingRecs ? JSON.parse(existingRecs) : [];
+          const recsNext = [entry, ...Array.isArray(parsedRecs) ? parsedRecs : []];
+          await AsyncStorage.setItem(key, JSON.stringify(recsNext));
+        }
+      } catch {}
+      // Show brief sent banner
+      setShowSent(true);
+      setTimeout(() => setShowSent(false), 2500);
     } catch (err) {
       Alert.alert('Error', 'Failed to stop recording: ' + err);
       setIsRecording(false);
@@ -173,11 +218,22 @@ function DashboardScreen() {
         </Text>
       </TouchableOpacity>
       {isRecording && (
-        <Text style={{ color: '#e75480', textAlign: 'center', marginBottom: 8 }}>Recording emergency audio...</Text>
+        <View style={styles.recordingVizContainer}>
+          <Text style={styles.recordingVizText}>Recording…</Text>
+          <View style={styles.waveformRow}>
+            {[0, 1, 2, 3, 4, 5].map((i) => {
+              const height = waveAnim.interpolate({ inputRange: [0, 1], outputRange: [8 + i * 2, 24 + i * 4] });
+              return <Animated.View key={i} style={[styles.waveBar, { height }]} />;
+            })}
+          </View>
+        </View>
       )}
       {loading && <ActivityIndicator color="#e75480" style={{ marginBottom: 8 }} />}
-      {recordedUri && (
-        <Text style={{ color: '#666', fontSize: 12, textAlign: 'center', marginBottom: 8 }}>Recording URI: {recordedUri}</Text>
+      {showSent && (
+        <View style={styles.sentBanner}>
+          <Text style={styles.sentTick}>✓</Text>
+          <Text style={styles.sentText}>Recording sent to ally</Text>
+        </View>
       )}
 
       {/* Allies List */}
@@ -388,6 +444,45 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 32,
     padding: 20,
     marginTop: 16,
+  },
+  recordingVizContainer: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  recordingVizText: {
+    color: '#e75480',
+    marginBottom: 6,
+  },
+  waveformRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 4,
+    height: 36,
+  },
+  waveBar: {
+    width: 6,
+    backgroundColor: '#e75480',
+    borderRadius: 3,
+    marginHorizontal: 2,
+  },
+  sentBanner: {
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e6fffa',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 8,
+  },
+  sentTick: {
+    color: '#10b981',
+    fontWeight: 'bold',
+    marginRight: 6,
+  },
+  sentText: {
+    color: '#065f46',
+    fontWeight: '600',
   },
   alliesHeading: {
     fontSize: 20,
