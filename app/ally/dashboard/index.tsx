@@ -1,10 +1,20 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Navbar from '../../../components/ui/navbar';
+import { getSocket } from '../../utils/socket';
 
-const ALERTS = [
+// Alert type
+type AlertItem = {
+  id: string;
+  message: string;
+  time: string;
+  audioUri?: string;
+};
+// Start with static alerts, but allow real-time updates
+const INITIAL_ALERTS: AlertItem[] = [
   { id: '1', message: 'Victim triggered emergency alert', time: '2 min ago' },
   { id: '2', message: 'Audio received from victim', time: '10 min ago' },
   { id: '3', message: 'Victim marked safe', time: '1 day ago' },
@@ -18,6 +28,45 @@ const HELPLINES = [
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const [alerts, setAlerts] = useState(INITIAL_ALERTS);
+
+  useEffect(() => {
+    // Load persisted alerts on mount
+    AsyncStorage.getItem('ally_alerts').then(stored => {
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setAlerts(parsed);
+          }
+        } catch {}
+      }
+    });
+
+    const socket = getSocket();
+    // Join as ally (use static id for now)
+    socket.emit('join-ally', '1');
+    // Listen for emergency alerts
+    socket.on('emergency-alert', (data: { audioUri?: string }) => {
+      setAlerts(prev => {
+        const next = [
+          {
+            id: Date.now().toString(),
+            message: 'Victim triggered emergency alert',
+            time: 'Just now',
+            audioUri: data.audioUri,
+          },
+          ...prev,
+        ];
+        AsyncStorage.setItem('ally_alerts', JSON.stringify(next)).catch(() => {});
+        return next;
+      });
+    });
+    return () => {
+      socket.off('emergency-alert');
+    };
+  }, []);
+
   const handleLogout = () => {
     router.replace('/');
   };
@@ -33,10 +82,13 @@ export default function DashboardScreen() {
         {/* Alerts Section */}
         <View style={styles.alertsSection}>
           <Text style={styles.sectionTitle}>Recent Alerts from Victim</Text>
-          {ALERTS.map(item => (
+          {alerts.map(item => (
             <View key={item.id} style={styles.alertItem}>
               <Text style={styles.alertMsg}>{item.message}</Text>
               <Text style={styles.alertTime}>{item.time}</Text>
+              {item.audioUri && (
+                <Text style={{ color: '#e75480', fontSize: 12 }}>Audio: {item.audioUri}</Text>
+              )}
             </View>
           ))}
         </View>

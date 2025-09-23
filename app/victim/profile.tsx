@@ -1,6 +1,8 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Audio } from 'expo-av';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Navbar from '../../components/ui/navbar';
@@ -18,8 +20,123 @@ function getInitial(name: string) {
   return name ? name[0].toUpperCase() : '';
 }
 
-export default function ProfileScreen() {
+function VictimProfile() {
   const router = useRouter();
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [codewordUri, setCodewordUri] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [codewordSaved, setCodewordSaved] = useState(false);
+
+  // Load codeword audio from storage on mount
+  React.useEffect(() => {
+    AsyncStorage.getItem('victim_codeword_audio').then(val => {
+      if (val) setCodewordUri(val);
+    });
+  }, []);
+
+  // Save codeword audio to storage
+  const saveCodewordAudio = async () => {
+    if (!codewordUri) return;
+    await AsyncStorage.setItem('victim_codeword_audio', codewordUri);
+    setCodewordSaved(true);
+    setTimeout(() => setCodewordSaved(false), 1500);
+  };
+
+  // Expo recommended high quality recording options
+  const RECORDING_OPTIONS = {
+    android: {
+      extension: '.m4a',
+      outputFormat: 2, // MPEG_4 = 2
+      audioEncoder: 3, // AAC = 3
+      sampleRate: 44100,
+      numberOfChannels: 2,
+      bitRate: 128000,
+    },
+    ios: {
+      extension: '.caf',
+      audioQuality: 127, // max
+      sampleRate: 44100,
+      numberOfChannels: 2,
+      bitRate: 128000,
+      linearPCMBitDepth: 16,
+      linearPCMIsBigEndian: false,
+      linearPCMIsFloat: false,
+    },
+    web: {
+      mimeType: 'audio/webm',
+      bitsPerSecond: 128000,
+    },
+  };
+
+  // Start codeword recording
+  const startCodewordRecording = async () => {
+    try {
+      setLoading(true);
+      await Audio.requestPermissionsAsync();
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+      const rec = new Audio.Recording();
+      await rec.prepareToRecordAsync(RECORDING_OPTIONS);
+      await rec.startAsync();
+      setRecording(rec);
+      setIsRecording(true);
+    } catch (err) {
+      alert('Failed to start recording: ' + err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Stop codeword recording
+  const stopCodewordRecording = async () => {
+    setLoading(true);
+    try {
+      if (!recording) return;
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      setCodewordUri(uri || null);
+      setRecording(null);
+      setIsRecording(false);
+    } catch (err) {
+      alert('Failed to stop recording: ' + err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Play codeword audio
+  const playCodewordAudio = async () => {
+    if (!codewordUri) return;
+    setLoading(true);
+    try {
+      const { sound } = await Audio.Sound.createAsync({ uri: codewordUri });
+      setSound(sound);
+      setIsPlaying(true);
+      await sound.playAsync();
+      sound.setOnPlaybackStatusUpdate(status => {
+        if (!status.isLoaded || status.didJustFinish) {
+          setIsPlaying(false);
+          sound.unloadAsync();
+        }
+      });
+    } catch (err) {
+      alert('Failed to play audio: ' + err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cleanup sound on unmount
+  React.useEffect(() => {
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, [sound]);
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       {/* Navbar */}
@@ -63,26 +180,55 @@ export default function ProfileScreen() {
           </View>
         </View>
       </View>
-      {/* Codeword Section */}
+      {/* Codeword Section (audio) */}
       <View style={styles.sectionBox}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Codeword</Text>
-          <TouchableOpacity onPress={() => alert('Preview codeword')}
-            style={styles.previewBtn}>
-            <Ionicons name="play-circle" size={24} color="#e75480" />
-            <Text style={styles.previewText}>Preview</Text>
-          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>Codeword (Audio)</Text>
         </View>
-        <View style={styles.codewordMicRow}>
-          <TouchableOpacity onPress={() => alert('Edit/Record Codeword')} style={styles.micBtn}>
-            <MaterialCommunityIcons name="microphone" size={32} color="#e75480" />
-          </TouchableOpacity>
-          <Text style={styles.editLabel}>Tap mic to edit codeword</Text>
+        <View style={{ marginTop: 8, alignItems: 'flex-start' }}>
+          {!isRecording && (
+            <TouchableOpacity
+              onPress={startCodewordRecording}
+              style={{ backgroundColor: '#e75480', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 18, marginBottom: 8 }}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>Record Codeword</Text>
+            </TouchableOpacity>
+          )}
+          {isRecording && (
+            <TouchableOpacity
+              onPress={stopCodewordRecording}
+              style={{ backgroundColor: '#e11d48', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 18, marginBottom: 8 }}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>Stop Recording</Text>
+            </TouchableOpacity>
+          )}
+          {codewordUri && !isRecording && (
+            <TouchableOpacity
+              onPress={playCodewordAudio}
+              style={{ backgroundColor: '#ffe4ec', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 18, marginBottom: 8 }}
+              disabled={isPlaying}
+            >
+              <Text style={{ color: '#e75480', fontWeight: 'bold', fontSize: 15 }}>{isPlaying ? 'Playing...' : 'Play Codeword'}</Text>
+            </TouchableOpacity>
+          )}
+          {codewordUri && !isRecording && (
+            <TouchableOpacity
+              onPress={saveCodewordAudio}
+              style={{ backgroundColor: '#4ade80', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 18, marginBottom: 8 }}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>Save Codeword</Text>
+            </TouchableOpacity>
+          )}
+          {codewordSaved && (
+            <Text style={{ color: '#4ade80', marginTop: 6 }}>Codeword saved!</Text>
+          )}
         </View>
       </View>
     </SafeAreaView>
   );
 }
+
+export default VictimProfile;
 
 const styles = StyleSheet.create({
   safeArea: {

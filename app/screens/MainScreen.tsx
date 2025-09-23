@@ -9,12 +9,19 @@ export default function MainScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.logoContainer}>
         <Text style={styles.logoText}>RAKHI</Text>
+        <Text style={styles.subtitle}>Voice Safety Demo</Text>
       </View>
       <View style={styles.optionsContainer}>
-  <TouchableOpacity style={styles.button} onPress={() => router.replace('/victim/dashboard')}>
+        <TouchableOpacity 
+          style={styles.button} 
+          onPress={() => router.replace('/victim/dashboard')}
+        >
           <Text style={styles.buttonText}>Continue as Victim</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={() => router.replace('/ally/dashboard')}>
+        <TouchableOpacity 
+          style={styles.button} 
+          onPress={() => router.replace('/ally/dashboard')}
+        >
           <Text style={styles.buttonText}>Continue as Ally</Text>
         </TouchableOpacity>
       </View>
@@ -43,6 +50,12 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 8,
     // Add smoothness
+  },
+  subtitle: {
+    fontSize: 18,
+    color: '#e75480',
+    marginTop: 10,
+    fontWeight: '500',
   },
   optionsContainer: {
     width: '80%',
